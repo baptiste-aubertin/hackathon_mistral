@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI_Xplorer</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-white p-10 h-[100vh]">
+    <div class="w-full h-[100%] bg-[#0D0D0D] rounded-3xl">
+        <div class="w-full h-[100%] flex flex-col justify-end pb-4 px-4 space-y-4">
+            <div class="message_output h-full flex items-center w-full">
+                <div class="flex flex-col w-full items-center space-y-4">
+                    <div class="message bg-[#2B2B29] text-white rounded-2xl p-4 w-full overflow-x-scroll">
+                        <p id="tablature" class="text-sm whitespace-nowrap">
+                        </p>
+                    </div>
+                    <button class="border-2	 bg-[#1E110D] border-[#5C2B09] rounded-2xl text-[#F75705] font-bold text-sm p-4">
+                        Download MIDI File
+                    </button>
+                </div>
+            </div>
+            <div class="w-full flex space-x-4 text-[#F75705]">
+                <div class="flex flex-col items-center">
+                    <p>LLM Temperature</p>
+                    <input id="temperature" type="text" class="border-2	 border-[#5C2B09] bg-[#1E110D] w-full h-full rounded-2xl p-4" value="0.7">
+                </div>
+                <div class="flex flex-col items-center">
+                    <p>LLM Top_p</p>
+                    <input id="top_p" type="text" class="border-2	 bg-[#1E110D] border-[#5C2B09] w-full h-full rounded-2xl p-4" value="1">
+                </div>
+                <div class="flex flex-col items-center">
+                    <p>Number of beats</p>
+                    <input id="nb_beats" type="number" class="border-2	bg-[#1E110D] border-[#5C2B09] w-full h-full rounded-2xl p-4" value="4">
+                </div>
+                <div class="flex flex-col items-center">
+                    <p>Tab Key</p>
+                    <select id="key" class="border-2	bg-[#1E110D] border-[#5C2B09] w-full h-full rounded-2xl p-4">
+                        <option value="A">A</option>
+                        <option value="Ab">Ab</option>
+                        <option value="B">B</option>
+                        <option value="Bb">Bb</option>
+                        <option value="C" selected>C</option>
+                        <option value="C#">C#</option>
+                        <option value="D">D</option>
+                        <option value="E">E</option>
+                        <option value="Eb">Eb</option>
+                        <option value="F">F</option>
+                        <option value="F#">F#</option>
+                        <option value="G">G</option>
+                        <option value="Gb">Gb</option>
+                    </select>
+                </div>
+                <div class="flex flex-col items-center">
+                    <p>Tempo</p>
+                    <input id="tempo" type="number" class="border-2	bg-[#1E110D] border-[#5C2B09] w-full h-full rounded-2xl p-4" value="120">
+                </div>
+
+            </div>
+            <div class="h-[14%] flex items-center justify-between space-x-4">
+                <textarea id="message-input" class="bg-[#2B2B29] text-white w-full h-full rounded-2xl p-4 resize-none"></textarea>
+                <button id="send-button" class="aspect-square h-full">
+                    <img src="/static/imgs/send1.png" alt="Send" style="height: 100%; width: 100%;">
+                </button>
+            </div>
+        </div>
+    </div>
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const chatBox = document.getElementById("chat-box");
+            const messageInput = document.getElementById("message-input");
+            const sendButton = document.getElementById("send-button");
+
+            const tempoInput = document.getElementById("tempo");
+            const temperatureInput = document.getElementById("temperature");
+            const topPInput = document.getElementById("top_p");
+            const nbBeatsInput = document.getElementById("nb_beats");
+            const keySelect = document.getElementById("key");
+
+            const downloadButton = document.querySelector("button");
+            downloadButton.style.display = "none";  // Hide the button initially
+
+
+            sendButton.addEventListener("click", sendMessage);
+            messageInput.addEventListener("keypress", function (event) {
+                if (event.key === "Enter") {
+                    sendMessage();
+                }
+            });
+
+            function sendMessage() {
+                const message = messageInput.value.trim();
+                if (message === "") return;
+                
+                const temperature = temperatureInput.value;
+                const topP = topPInput.value;
+                const nbBeats = nbBeatsInput.value;
+                const key = keySelect.value;
+                const tempo = tempoInput.value;
+                // appendMessage("You: " + message);
+                messageInput.value = "";
+
+                fetch("/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        temperature: temperature,
+                        top_p: topP,
+                        nb_beats: nbBeats,
+                        key: key,
+                        tempo: tempo
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        // appendMessage(data.message);
+                        const tablatureElement = document.getElementById("tablature");
+
+                        tablatureElement.innerHTML = data.tablature;
+
+                        if (data.midi_url) {
+                            downloadButton.setAttribute("onclick", `window.location.href='${data.midi_url}'`);
+                            downloadButton.style.display = "block";  // Show the button when midi_url is available
+                        } else {
+                            downloadButton.style.display = "none";  // Hide the button if midi_url is not available
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                    });
+            }
+
+
+        });
+    </script>
+</body>
+
+</html>

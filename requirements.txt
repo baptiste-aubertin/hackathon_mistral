@@ -1,0 +1,13 @@
+numpy
+pretty_midi
+matplotlib
+librosa
+typing_extensions
+sox
+pandas
+jams
+midiutil
+mistralai
+tqdm
+uvicorn[standard]
+fastapi
